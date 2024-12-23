@@ -6,10 +6,10 @@ router.get('/playlist/:genre', async (req, res) => {
   const { genre } = req.params;
   
   const playlistIds = {
-    rap: '1963962142',
-    rnb: '1963962142',
-    pop: '1963962142',
-    jazz: '1963962142'
+    rap: '908622995',
+    rnb: '908622995',
+    pop: '908622995',
+    jazz: '908622995'
   };
 
   try {
