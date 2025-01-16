@@ -73,4 +73,16 @@ router.post('/games/join', (req, res) => {
     });
   });
 
+  // Récupérer la partie selon son code
+router.get('/games/:code', (req, res) => {
+  const { code } = req.params;
+  const game = games[code];
+
+  if (!game) {
+    return res.status(404).json({ error: "Partie introuvable." });
+  }
+
+  return res.json(game); // renvoie un objet JSON ex: { code, name, players, isOpen }
+});
+
 module.exports = router;
