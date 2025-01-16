@@ -2,6 +2,8 @@ const express = require('express');
 const http = require('http');
 const cors = require('cors');
 const { Server } = require('socket.io');
+const initializeSocketIO = require('./services/socketService');
+
 
 // Import des routes
 const playlistRoutes = require('./routes/playlist');
@@ -15,15 +17,8 @@ app.use('/api', playlistRoutes);
 // Création du serveur HTTP
 const server = http.createServer(app);
 
-// Configuration de Socket.IO
-const io = new Server(server, {
-  cors: {
-    origin: "*",
-  },
-});
-
-// Importation de la logique socket après avoir créé io
-require('./routes/socketGame')(io);
+// Initialisation de Socket.IO
+initializeSocketIO(server);
 
 const PORT = process.env.PORT || 5002;
 server.listen(PORT, () => {
