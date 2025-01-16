@@ -1,5 +1,5 @@
 // socketGame.js
-const { io } = require('./index');
+const { io } = require('../index);
 
 // On stocke les parties en mémoire (exemple)
 const games = {}; 
