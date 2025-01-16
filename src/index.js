@@ -4,7 +4,7 @@ const cors = require('cors');
 
 // Import (ou pas) pour d’autres routes REST existantes
 const playlistRoutes = require('./routes/playlist');
-require('./socketGame');
+require('./routes/socketGame');
 
 const app = express();
 app.use(cors());
