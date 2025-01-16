@@ -38,8 +38,39 @@ router.post('/games/create', (req, res) => {
   return res.json({ code });
 });
 
-/**
- * (Plus tard on ajoutera ici la route pour "join" et d’autres routes…)
- */
+// Router pour rejoindre une partie
+router.post('/games/join', (req, res) => {
+    const { code, playerName } = req.body;
+  
+    // 1. Vérifier si la partie existe
+    const game = games[code];
+    if (!game) {
+      return res.status(404).json({ error: "Partie introuvable." });
+    }
+  
+    // 2. Vérifier si la partie est encore ouverte
+    if (!game.isOpen) {
+      return res.status(400).json({ error: "La partie est déjà fermée." });
+    }
+  
+    // 3. Ajouter le joueur
+    if (!game.players.includes(playerName)) {
+      game.players.push(playerName);
+    }
+  
+    // Optionnel : Log
+    console.log(`Joueur "${playerName}" a rejoint la partie ${code}`);
+  
+    // 4. Retourner la partie ou un message de succès
+    return res.json({
+      success: true,
+      game: {
+        code: game.code,
+        name: game.name,
+        players: game.players,
+        isOpen: game.isOpen,
+      },
+    });
+  });
 
 module.exports = router;
