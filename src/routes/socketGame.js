@@ -13,7 +13,7 @@ module.exports = (io) => {
     console.log('Client connecté:', socket.id);
 
     socket.on('createGame', (payload, callback) => {
-      const { playerName } = payload;
+      const { playerName, uid } = payload;
       const code = generateGameCode();
       
       games[code] = {
