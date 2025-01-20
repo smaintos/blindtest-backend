@@ -24,6 +24,7 @@ module.exports = (io) => {
       };
 
       socket.join(code);
+      console.log(`Partie créée avec le code ${code} par ${playerName}`);
       callback({ success: true, game: games[code] });
     });
 
@@ -41,9 +42,15 @@ module.exports = (io) => {
         return;
       }
 
-      game.players.push({ id: socket.id, name: playerName });
+      // Vérifier si le joueur est déjà dans la partie
+      const existingPlayer = game.players.find(player => player.id === socket.id);
+      if (!existingPlayer) {
+        game.players.push({ id: socket.id, name: playerName });
+      }
+
       socket.join(code);
 
+      console.log(`Joueur "${playerName}" a rejoint la partie ${code}`);
       io.to(code).emit('playerJoined', { game });
       callback({ success: true, game });
     });
@@ -63,6 +70,7 @@ module.exports = (io) => {
       }
 
       game.isOpen = false;
+      console.log(`Partie ${code} fermée par l'hôte`);
       io.to(code).emit('gameClosed');
       delete games[code];
       callback({ success: true });
