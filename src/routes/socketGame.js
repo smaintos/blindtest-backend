@@ -20,7 +20,7 @@ module.exports = (io) => {
         code,
         players: [{ id: socket.id, name: playerName }],
         isOpen: true,
-        host: socket.id
+        host: uid
       };
 
       socket.join(code);
