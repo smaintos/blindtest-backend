@@ -90,18 +90,18 @@ module.exports = (io) => {
         game.canGuess = false;
         player.score += 1;
         
-        // Envoyer d'abord le message de réussite
+        // Envoyer la notification à tous les joueurs
         io.to(code).emit('correctAnswerFound', { 
           game,
           winnerName: player.name
         });
     
-        // Attendre 2 secondes puis passer à la piste suivante
+        // Attendre 2 secondes puis mettre à jour l'index pour tous
         setTimeout(() => {
           game.currentTrackIndex += 1;
           game.canGuess = true;
           
-          // Envoyer la mise à jour avec le nouvel index
+          // Envoyer la mise à jour à tous les joueurs, y compris l'hôte
           io.to(code).emit('nextTrack', { 
             game,
             currentTrackIndex: game.currentTrackIndex
