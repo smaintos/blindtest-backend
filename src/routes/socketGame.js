@@ -111,19 +111,21 @@ module.exports = (io) => {
     });
 
     socket.on('timerEnded', (payload) => {
-      const { code, currentTrackIndex } = payload;
+      const { code, currentTrackIndex, timeUp } = payload;
       const game = games[code];
     
       if (!game || game.host !== currentUid) return;
     
-      game.currentTrackIndex = currentTrackIndex;
-      game.canGuess = true;
-      
-      // Émettre l'événement à tous les joueurs
-      io.to(code).emit('nextTrack', { 
-        game,
-        currentTrackIndex: game.currentTrackIndex
-      });
+      if (timeUp) {
+        io.to(code).emit('timerEnded', { game, timeUp: true });
+      } else {
+        game.currentTrackIndex = currentTrackIndex;
+        game.canGuess = true;
+        io.to(code).emit('nextTrack', { 
+          game,
+          currentTrackIndex: game.currentTrackIndex
+        });
+      }
     });
 
     socket.on('closeGame', (payload, callback) => {
