@@ -21,6 +21,7 @@ module.exports = (io) => {
         io.sockets.sockets.get(oldSocketId)?.disconnect();
       }
       userSockets.set(uid, socket.id);
+      console.log(`Utilisateur ${uid} authentifié avec socket ${socket.id}`);
     });
 
     socket.on('createGame', (payload, callback) => {
@@ -31,7 +32,10 @@ module.exports = (io) => {
         code,
         players: [{ id: uid, name: playerName }],
         isOpen: true,
-        host: uid
+        host: uid,
+        genre: null,
+        isPlaying: false,
+        currentTrackIndex: 0
       };
 
       socket.join(code);
@@ -59,8 +63,50 @@ module.exports = (io) => {
       }
 
       socket.join(code);
+      console.log(`Joueur "${playerName}" a rejoint la partie ${code}`);
       io.to(code).emit('playerJoined', { game });
       callback({ success: true, game });
+    });
+
+    socket.on('selectGenre', (payload, callback) => {
+      const { code, genre } = payload;
+      const game = games[code];
+
+      if (!game) {
+        callback({ success: false, error: 'Partie introuvable' });
+        return;
+      }
+
+      if (game.host !== currentUid) {
+        callback({ success: false, error: 'Seul l\'hôte peut sélectionner le genre' });
+        return;
+      }
+
+      game.genre = genre;
+      game.isPlaying = true;
+      console.log(`Genre ${genre} sélectionné pour la partie ${code}`);
+      
+      io.to(code).emit('gameUpdated', { game });
+      callback({ success: true });
+    });
+
+    socket.on('updateTrackIndex', (payload, callback) => {
+      const { code, index } = payload;
+      const game = games[code];
+
+      if (!game) {
+        callback({ success: false, error: 'Partie introuvable' });
+        return;
+      }
+
+      if (game.host !== currentUid) {
+        callback({ success: false, error: 'Seul l\'hôte peut changer de piste' });
+        return;
+      }
+
+      game.currentTrackIndex = index;
+      io.to(code).emit('trackUpdated', { currentTrackIndex: index });
+      callback({ success: true });
     });
 
     socket.on('closeGame', (payload, callback) => {
@@ -78,6 +124,7 @@ module.exports = (io) => {
       }
 
       game.isOpen = false;
+      console.log(`Partie ${code} fermée par l'hôte`);
       io.to(code).emit('gameClosed');
       delete games[code];
       callback({ success: true });
