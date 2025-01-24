@@ -11,17 +11,11 @@ module.exports = (io) => {
   }
 
   io.on('connection', (socket) => {
-    console.log('Client connecté:', socket.id);
     let currentUid = null;
 
     socket.on('authenticate', ({ uid }) => {
       currentUid = uid;
-      if (userSockets.has(uid)) {
-        const oldSocketId = userSockets.get(uid);
-        io.sockets.sockets.get(oldSocketId)?.disconnect();
-      }
       userSockets.set(uid, socket.id);
-      console.log(`Utilisateur ${uid} authentifié avec socket ${socket.id}`);
     });
 
     socket.on('createGame', (payload, callback) => {
@@ -35,11 +29,11 @@ module.exports = (io) => {
         host: uid,
         genre: null,
         isPlaying: false,
-        currentTrackIndex: 0
+        currentTrackIndex: 0,
+        canGuess: true
       };
 
       socket.join(code);
-      console.log(`Partie créée avec le code ${code} par ${playerName}`);
       callback({ success: true, game: games[code] });
     });
 
@@ -63,7 +57,6 @@ module.exports = (io) => {
       }
 
       socket.join(code);
-      console.log(`Joueur "${playerName}" a rejoint la partie ${code}`);
       io.to(code).emit('playerJoined', { game });
       callback({ success: true, game });
     });
@@ -72,20 +65,16 @@ module.exports = (io) => {
       const { code, genre } = payload;
       const game = games[code];
 
-      if (!game) {
-        callback({ success: false, error: 'Partie introuvable' });
-        return;
-      }
-
-      if (game.host !== currentUid) {
-        callback({ success: false, error: 'Seul l\'hôte peut sélectionner le genre' });
+      if (!game || game.host !== currentUid) {
+        callback({ success: false, error: 'Non autorisé' });
         return;
       }
 
       game.genre = genre;
       game.isPlaying = true;
-      console.log(`Genre ${genre} sélectionné pour la partie ${code}`);
-      
+      game.currentTrackIndex = 0;
+      game.canGuess = true;
+
       io.to(code).emit('gameUpdated', { game });
       callback({ success: true });
     });
@@ -94,12 +83,28 @@ module.exports = (io) => {
       const { code, playerId } = payload;
       const game = games[code];
 
-      if (!game) return;
+      if (!game || !game.canGuess) return;
 
       const player = game.players.find(p => p.id === playerId);
       if (player) {
+        game.canGuess = false;
         player.score += 1;
-        io.to(code).emit('scoreUpdated', { game });
+        
+        io.to(code).emit('correctAnswerFound', { 
+          game,
+          winnerName: player.name,
+          currentTrackIndex: game.currentTrackIndex
+        });
+
+        // Réinitialiser après 2 secondes
+        setTimeout(() => {
+          game.currentTrackIndex += 1;
+          game.canGuess = true;
+          io.to(code).emit('nextTrack', { 
+            game,
+            currentTrackIndex: game.currentTrackIndex 
+          });
+        }, 2000);
       }
     });
 
@@ -107,36 +112,20 @@ module.exports = (io) => {
       const { code } = payload;
       const game = games[code];
 
-      if (!game) {
-        callback({ success: false, error: 'Partie introuvable' });
+      if (!game || game.host !== currentUid) {
+        callback({ success: false, error: 'Non autorisé' });
         return;
       }
 
-      if (game.host !== currentUid) {
-        callback({ success: false, error: 'Seul l\'hôte peut fermer la partie' });
-        return;
-      }
-
-      game.isOpen = false;
-      console.log(`Partie ${code} fermée par l'hôte`);
-      io.to(code).emit('gameClosed');
       delete games[code];
+      io.to(code).emit('gameClosed');
       callback({ success: true });
     });
 
     socket.on('disconnect', () => {
-      console.log('Client déconnecté:', socket.id);
       if (currentUid) {
         userSockets.delete(currentUid);
       }
-      
-      Object.values(games).forEach(game => {
-        const index = game.players.findIndex(p => p.id === currentUid);
-        if (index !== -1) {
-          game.players.splice(index, 1);
-          io.to(game.code).emit('playerJoined', { game });
-        }
-      });
     });
   });
 };
