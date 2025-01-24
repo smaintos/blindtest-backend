@@ -114,12 +114,13 @@ module.exports = (io) => {
       const { code, currentTrackIndex } = payload;
       const game = games[code];
     
-      if (!game) return;
+      if (!game || game.host !== currentUid) return;
     
       game.currentTrackIndex = currentTrackIndex;
       game.canGuess = true;
       
-      io.to(code).emit('timerEnded', { 
+      // Émettre l'événement à tous les joueurs
+      io.to(code).emit('nextTrack', { 
         game,
         currentTrackIndex: game.currentTrackIndex
       });
