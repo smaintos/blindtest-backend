@@ -82,27 +82,29 @@ module.exports = (io) => {
     socket.on('correctGuess', (payload) => {
       const { code, playerId } = payload;
       const game = games[code];
-
+    
       if (!game || !game.canGuess) return;
-
+    
       const player = game.players.find(p => p.id === playerId);
       if (player) {
         game.canGuess = false;
         player.score += 1;
         
+        // Envoyer d'abord le message de réussite
         io.to(code).emit('correctAnswerFound', { 
           game,
-          winnerName: player.name,
-          currentTrackIndex: game.currentTrackIndex
+          winnerName: player.name
         });
-
-        // Réinitialiser après 2 secondes
+    
+        // Attendre 2 secondes puis passer à la piste suivante
         setTimeout(() => {
           game.currentTrackIndex += 1;
           game.canGuess = true;
+          
+          // Envoyer la mise à jour avec le nouvel index
           io.to(code).emit('nextTrack', { 
             game,
-            currentTrackIndex: game.currentTrackIndex 
+            currentTrackIndex: game.currentTrackIndex
           });
         }, 2000);
       }
