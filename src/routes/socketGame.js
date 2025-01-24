@@ -1,6 +1,6 @@
 module.exports = (io) => {
   const games = {};
-  const userSockets = new Map(); // Stocke la relation uid -> socket.id
+  const userSockets = new Map();
 
   function generateGameCode(length = 5) {
     let code = '';
@@ -30,7 +30,7 @@ module.exports = (io) => {
       
       games[code] = {
         code,
-        players: [{ id: uid, name: playerName }],
+        players: [{ id: uid, name: playerName, score: 0 }],
         isOpen: true,
         host: uid,
         genre: null,
@@ -59,7 +59,7 @@ module.exports = (io) => {
 
       const existingPlayer = game.players.find(player => player.id === uid);
       if (!existingPlayer) {
-        game.players.push({ id: uid, name: playerName });
+        game.players.push({ id: uid, name: playerName, score: 0 });
       }
 
       socket.join(code);
@@ -90,23 +90,17 @@ module.exports = (io) => {
       callback({ success: true });
     });
 
-    socket.on('updateTrackIndex', (payload, callback) => {
-      const { code, index } = payload;
+    socket.on('correctGuess', (payload) => {
+      const { code, playerId } = payload;
       const game = games[code];
 
-      if (!game) {
-        callback({ success: false, error: 'Partie introuvable' });
-        return;
-      }
+      if (!game) return;
 
-      if (game.host !== currentUid) {
-        callback({ success: false, error: 'Seul l\'hôte peut changer de piste' });
-        return;
+      const player = game.players.find(p => p.id === playerId);
+      if (player) {
+        player.score += 1;
+        io.to(code).emit('scoreUpdated', { game });
       }
-
-      game.currentTrackIndex = index;
-      io.to(code).emit('trackUpdated', { currentTrackIndex: index });
-      callback({ success: true });
     });
 
     socket.on('closeGame', (payload, callback) => {
