@@ -110,6 +110,21 @@ module.exports = (io) => {
       }
     });
 
+    socket.on('timerEnded', (payload) => {
+      const { code, currentTrackIndex } = payload;
+      const game = games[code];
+    
+      if (!game) return;
+    
+      game.currentTrackIndex = currentTrackIndex;
+      game.canGuess = true;
+      
+      io.to(code).emit('timerEnded', { 
+        game,
+        currentTrackIndex: game.currentTrackIndex
+      });
+    });
+
     socket.on('closeGame', (payload, callback) => {
       const { code } = payload;
       const game = games[code];
