@@ -34,7 +34,11 @@ module.exports = (io) => {
       };
 
       socket.join(code);
-      callback({ success: true, game: games[code] });
+      if (typeof callback === "function") {
+        callback({ success: true, game: games[code] });
+      } else {
+        console.error("Callback is not a function");
+      }
     });
 
     socket.on('joinGame', (payload, callback) => {
@@ -42,12 +46,20 @@ module.exports = (io) => {
       const game = games[code];
 
       if (!game) {
-        callback({ success: false, error: 'Partie introuvable' });
+        if (typeof callback === "function") {
+          callback({ success: false, error: 'Partie introuvable' });
+        } else {
+          console.error("Callback is not a function");
+        }
         return;
       }
 
       if (!game.isOpen) {
-        callback({ success: false, error: 'Partie fermée' });
+        if (typeof callback === "function") {
+          callback({ success: false, error: 'Partie fermée' });
+        } else {
+          console.error("Callback is not a function");
+        }
         return;
       }
 
@@ -58,7 +70,11 @@ module.exports = (io) => {
 
       socket.join(code);
       io.to(code).emit('playerJoined', { game });
-      callback({ success: true, game });
+      if (typeof callback === "function") {
+        callback({ success: true, game });
+      } else {
+        console.error("Callback is not a function");
+      }
     });
 
     socket.on('selectGenre', (payload, callback) => {
@@ -66,7 +82,11 @@ module.exports = (io) => {
       const game = games[code];
 
       if (!game || game.host !== currentUid) {
-        callback({ success: false, error: 'Non autorisé' });
+        if (typeof callback === "function") {
+          callback({ success: false, error: 'Non autorisé' });
+        } else {
+          console.error("Callback is not a function");
+        }
         return;
       }
 
@@ -74,9 +94,12 @@ module.exports = (io) => {
       game.isPlaying = true;
       game.currentTrackIndex = 0;
       game.canGuess = true;
-
       io.to(code).emit('gameUpdated', { game });
-      callback({ success: true });
+      if (typeof callback === "function") {
+        callback({ success: true });
+      } else {
+        console.error("Callback is not a function");
+      }
     });
 
     socket.on('correctGuess', (payload) => {
@@ -90,18 +113,15 @@ module.exports = (io) => {
         game.canGuess = false;
         player.score += 1;
         
-        // Envoyer la notification à tous les joueurs
         io.to(code).emit('correctAnswerFound', { 
           game,
           winnerName: player.name
         });
     
-        // Attendre 2 secondes puis mettre à jour l'index pour tous
         setTimeout(() => {
           game.currentTrackIndex += 1;
           game.canGuess = true;
           
-          // Envoyer la mise à jour à tous les joueurs, y compris l'hôte
           io.to(code).emit('nextTrack', { 
             game,
             currentTrackIndex: game.currentTrackIndex
