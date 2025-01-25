@@ -148,17 +148,23 @@ module.exports = (io) => {
       }
     });
 
-    socket.on('closeGame', (payload) => {
+    socket.on('closeGame', (payload, callback = () => {}) => {
       const { code } = payload;
       const game = games[code];
     
       if (!game || game.host !== currentUid) {
         io.to(socket.id).emit('error', { message: 'Non autorisé' });
+        if (typeof callback === "function") {
+          callback({ success: false, error: 'Non autorisé' });
+        }
         return;
       }
     
       delete games[code];
       io.to(code).emit('gameClosed');
+      if (typeof callback === "function") {
+        callback({ success: true });
+      }
     });
 
     socket.on('disconnect', () => {
