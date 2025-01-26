@@ -141,10 +141,15 @@ module.exports = (io) => {
       } else {
         game.currentTrackIndex = currentTrackIndex;
         game.canGuess = true;
-        io.to(code).emit('nextTrack', { 
-          game,
-          currentTrackIndex: game.currentTrackIndex
-        });
+        
+        if (currentTrackIndex >= game.tracks?.length - 1) {
+          io.to(code).emit('gameEnded', { game });
+        } else {
+          io.to(code).emit('nextTrack', { 
+            game,
+            currentTrackIndex 
+          });
+        }
       }
     });
 
