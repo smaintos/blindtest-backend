@@ -119,7 +119,6 @@ module.exports = (io) => {
           game.canGuess = true;
 
           if (isLastTrack) {
-            // Émettre gameEnded à tous les clients
             io.to(code).emit('gameEnded', { game });
           } else {
             io.to(code).emit('nextTrack', { 
@@ -136,7 +135,6 @@ module.exports = (io) => {
       if (!game) return;
     
       if (timeUp && currentTrackIndex >= game.tracks.length - 1) {
-        // Termine le jeu seulement quand le timer de la dernière piste est fini
         io.to(code).emit('gameEnded', { game });
       } else {
         game.currentTrackIndex = currentTrackIndex;
