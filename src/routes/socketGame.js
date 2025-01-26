@@ -101,35 +101,34 @@ module.exports = (io) => {
         console.error("Callback is not a function");
       }
     });
-    
-    socket.on('correctGuess', ({ code, playerId }) => {
-      const game = games[code];
-      
-      if (!game) return;
-    
-      // Met à jour le score
-      game.players = game.players.map(player => {
-        if (player.id === playerId) {
-          return { ...player, score: player.score + 1 };
-        }
-        return player;
+
+      socket.on('correctGuess', ({ code, playerId, isLastTrack }) => {
+        const game = games[code];
+        
+        if (!game) return;
+
+        game.players = game.players.map(player => {
+          if (player.id === playerId) {
+            return { ...player, score: player.score + 1 };
+          }
+          return player;
+        });
+
+        setTimeout(() => {
+          game.currentTrackIndex++;
+          game.canGuess = true;
+
+          if (isLastTrack) {
+            // Émettre gameEnded à tous les clients
+            io.to(code).emit('gameEnded', { game });
+          } else {
+            io.to(code).emit('nextTrack', { 
+              game,
+              currentTrackIndex: game.currentTrackIndex
+            });
+          }
+        }, 2000);
       });
-    
-      // Passe à la piste suivante après 2 secondes
-      setTimeout(() => {
-        game.currentTrackIndex++;
-        game.canGuess = true;
-    
-        if (game.currentTrackIndex >= game.tracks?.length - 1) {
-          io.to(code).emit('gameEnded', { game }); // Émet gameEnded à tous les clients
-        } else {
-          io.to(code).emit('nextTrack', { 
-            game,
-            currentTrackIndex: game.currentTrackIndex
-          });
-        }
-      }, 2000);
-    });
 
     socket.on('timerEnded', ({ code, currentTrackIndex, timeUp }) => {
       const game = games[code];
