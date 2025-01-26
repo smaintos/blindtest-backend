@@ -143,6 +143,7 @@ module.exports = (io) => {
         game.canGuess = true;
         
         if (currentTrackIndex >= game.tracks?.length - 1) {
+          // Émettre gameEnded à tous les clients
           io.to(code).emit('gameEnded', { game });
         } else {
           io.to(code).emit('nextTrack', { 
