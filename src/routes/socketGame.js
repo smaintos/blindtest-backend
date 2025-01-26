@@ -101,7 +101,7 @@ module.exports = (io) => {
         console.error("Callback is not a function");
       }
     });
-
+    
     socket.on('correctGuess', ({ code, playerId }) => {
       const game = games[code];
       
@@ -115,21 +115,20 @@ module.exports = (io) => {
         return player;
       });
     
-      // Vérifie si c'est la dernière piste
-      if (game.currentTrackIndex >= game.tracks?.length - 1) {
-        // Émet gameEnded à tous les clients si c'est la dernière piste
-        io.to(code).emit('gameEnded', { game });
-      } else {
-        // Sinon passe à la piste suivante après 2 secondes
-        setTimeout(() => {
-          game.currentTrackIndex++;
-          game.canGuess = true;
+      // Passe à la piste suivante après 2 secondes
+      setTimeout(() => {
+        game.currentTrackIndex++;
+        game.canGuess = true;
+    
+        if (game.currentTrackIndex >= game.tracks?.length - 1) {
+          io.to(code).emit('gameEnded', { game }); // Émet gameEnded à tous les clients
+        } else {
           io.to(code).emit('nextTrack', { 
             game,
             currentTrackIndex: game.currentTrackIndex
           });
-        }, 2000);
-      }
+        }
+      }, 2000);
     });
 
     socket.on('timerEnded', ({ code, currentTrackIndex, timeUp }) => {
