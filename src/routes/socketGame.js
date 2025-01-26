@@ -146,6 +146,7 @@ module.exports = (io) => {
           currentTrackIndex 
         });
       }
+    });
 
     socket.on('closeGame', (payload, callback = () => {}) => {
       const { code } = payload;
