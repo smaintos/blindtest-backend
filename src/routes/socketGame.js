@@ -115,21 +115,23 @@ module.exports = (io) => {
         return player;
       });
     
-      // Passe à la piste suivante après 2 secondes
-      setTimeout(() => {
-        game.currentTrackIndex++;
-        game.canGuess = true;
-    
-        // Émet toujours nextTrack, même pour la dernière piste
-        io.to(code).emit('nextTrack', { 
-          game,
-          currentTrackIndex: game.currentTrackIndex
-        });
-    
-        // Laisse le timer gérer la fin de partie sur la dernière piste
-      }, 2000);
+      // Vérifie si c'est la dernière piste
+      if (game.currentTrackIndex >= game.tracks?.length - 1) {
+        // Émet gameEnded à tous les clients si c'est la dernière piste
+        io.to(code).emit('gameEnded', { game });
+      } else {
+        // Sinon passe à la piste suivante après 2 secondes
+        setTimeout(() => {
+          game.currentTrackIndex++;
+          game.canGuess = true;
+          io.to(code).emit('nextTrack', { 
+            game,
+            currentTrackIndex: game.currentTrackIndex
+          });
+        }, 2000);
+      }
     });
-    
+
     socket.on('timerEnded', ({ code, currentTrackIndex, timeUp }) => {
       const game = games[code];
       
