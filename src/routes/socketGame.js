@@ -102,55 +102,49 @@ module.exports = (io) => {
       }
     });
 
-    socket.on('correctGuess', (payload) => {
-      const { code, playerId } = payload;
+    socket.on('correctGuess', ({ code, playerId }) => {
       const game = games[code];
+      
+      if (!game) return;
     
-      if (!game || !game.canGuess) return;
+      // Met à jour le score
+      game.players = game.players.map(player => {
+        if (player.id === playerId) {
+          return { ...player, score: player.score + 1 };
+        }
+        return player;
+      });
     
-      const player = game.players.find(p => p.id === playerId);
-      if (player) {
-        game.canGuess = false;
-        player.score += 1;
-        
-        io.to(code).emit('correctAnswerFound', { 
+      // Attend 2 secondes avant de passer à la piste suivante
+      setTimeout(() => {
+        game.currentTrackIndex++;
+        game.canGuess = true;
+    
+        // Émet toujours nextTrack, même pour la dernière piste
+        io.to(code).emit('nextTrack', { 
           game,
-          winnerName: player.name
+          currentTrackIndex: game.currentTrackIndex
         });
     
-        setTimeout(() => {
-          game.currentTrackIndex += 1;
-          game.canGuess = true;
-          
-          io.to(code).emit('nextTrack', { 
-            game,
-            currentTrackIndex: game.currentTrackIndex
-          });
-        }, 2000);
-      }
+        // Laisse le timer gérer la fin de partie sur la dernière piste
+      }, 2000);
     });
 
-    socket.on('timerEnded', (payload) => {
-      const { code, currentTrackIndex, timeUp } = payload;
+    socket.on('timerEnded', ({ code, currentTrackIndex, timeUp }) => {
       const game = games[code];
+      
+      if (!game) return;
     
-      if (!game || game.host !== currentUid) return;
-    
-      if (timeUp) {
-        io.to(code).emit('timerEnded', { game, timeUp: true });
+      if (timeUp && currentTrackIndex >= tracks.length - 1) {
+        // Termine le jeu seulement quand le timer de la dernière piste est fini
+        io.to(code).emit('gameEnded', { game });
       } else {
         game.currentTrackIndex = currentTrackIndex;
         game.canGuess = true;
-        
-        if (currentTrackIndex >= game.tracks?.length - 1) {
-          // Émettre gameEnded à tous les clients
-          io.to(code).emit('gameEnded', { game });
-        } else {
-          io.to(code).emit('nextTrack', { 
-            game,
-            currentTrackIndex 
-          });
-        }
+        io.to(code).emit('nextTrack', { 
+          game,
+          currentTrackIndex 
+        });
       }
     });
 
