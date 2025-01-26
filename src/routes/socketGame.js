@@ -129,7 +129,7 @@ module.exports = (io) => {
         // Laisse le timer gérer la fin de partie sur la dernière piste
       }, 2000);
     });
-
+    
     socket.on('timerEnded', ({ code, currentTrackIndex, timeUp }) => {
       const game = games[code];
       
