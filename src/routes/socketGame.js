@@ -167,6 +167,13 @@ module.exports = (io) => {
       }
     });
 
+    socket.on('gameOver', ({ code }) => {
+      const game = games[code];
+      if (game) {
+        io.to(code).emit('gameOver', { game });
+      }
+    });
+
     socket.on('disconnect', () => {
       if (currentUid) {
         userSockets.delete(currentUid);
