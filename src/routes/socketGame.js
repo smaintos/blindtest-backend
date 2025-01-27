@@ -122,7 +122,7 @@ module.exports = (io) => {
       // S'assurer que tracks existe avant d'accéder au titre
       const trackTitle = game.tracks && game.tracks[game.currentTrackIndex] 
         ? game.tracks[game.currentTrackIndex].title 
-        : "la chanson";
+        : "";
     
       io.to(code).emit('correctAnswerFound', { 
         game,
