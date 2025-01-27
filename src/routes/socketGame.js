@@ -119,10 +119,15 @@ module.exports = (io) => {
         return player;
       });
     
+      // S'assurer que tracks existe avant d'accéder au titre
+      const trackTitle = game.tracks && game.tracks[game.currentTrackIndex] 
+        ? game.tracks[game.currentTrackIndex].title 
+        : "la chanson";
+    
       io.to(code).emit('correctAnswerFound', { 
         game,
-        winnerName: winner.name, // Utiliser le nom du gagnant trouvé
-        trackTitle: game.tracks[game.currentTrackIndex].title 
+        winnerName: winner.name,
+        trackTitle: trackTitle
       });
     
       setTimeout(() => {
@@ -139,6 +144,23 @@ module.exports = (io) => {
         }
       }, 2000);
     });
+
+        
+
+        setTimeout(() => {
+          game.currentTrackIndex++;
+          game.canGuess = true;
+
+          if (isLastTrack) {
+            io.to(code).emit('gameEnded', { game });
+          } else {
+            io.to(code).emit('nextTrack', { 
+              game,
+              currentTrackIndex: game.currentTrackIndex
+            });
+          }
+        }, 2000);
+      });
 
     socket.on('timerEnded', ({ code, currentTrackIndex, timeUp }) => {
       const game = games[code];
