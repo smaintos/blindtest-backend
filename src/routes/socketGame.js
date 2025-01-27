@@ -145,23 +145,6 @@ module.exports = (io) => {
       }, 2000);
     });
 
-        
-
-        setTimeout(() => {
-          game.currentTrackIndex++;
-          game.canGuess = true;
-
-          if (isLastTrack) {
-            io.to(code).emit('gameEnded', { game });
-          } else {
-            io.to(code).emit('nextTrack', { 
-              game,
-              currentTrackIndex: game.currentTrackIndex
-            });
-          }
-        }, 2000);
-      });
-
     socket.on('timerEnded', ({ code, currentTrackIndex, timeUp }) => {
       const game = games[code];
       
