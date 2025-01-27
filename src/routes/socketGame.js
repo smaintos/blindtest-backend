@@ -102,38 +102,43 @@ module.exports = (io) => {
       }
     });
 
-      socket.on('correctGuess', ({ code, playerId, isLastTrack }) => {
-        const game = games[code];
-        
-        if (!game) return;
-
-        game.players = game.players.map(player => {
-          if (player.id === playerId) {
-            return { ...player, score: player.score + 1 };
-          }
-          return player;
-        });
-
-        io.to(code).emit('correctAnswerFound', { 
-          game,
-          winnerName: player.name,
-          trackTitle: game.tracks[game.currentTrackIndex].title 
-        });
-
-        setTimeout(() => {
-          game.currentTrackIndex++;
-          game.canGuess = true;
-
-          if (isLastTrack) {
-            io.to(code).emit('gameEnded', { game });
-          } else {
-            io.to(code).emit('nextTrack', { 
-              game,
-              currentTrackIndex: game.currentTrackIndex
-            });
-          }
-        }, 2000);
+    socket.on('correctGuess', ({ code, playerId, isLastTrack }) => {
+      const game = games[code];
+      
+      if (!game) return;
+    
+      // Trouver le joueur qui a fait la bonne réponse
+      const winner = game.players.find(p => p.id === playerId);
+      if (!winner) return;
+    
+      // Mettre à jour le score
+      game.players = game.players.map(player => {
+        if (player.id === playerId) {
+          return { ...player, score: player.score + 1 };
+        }
+        return player;
       });
+    
+      io.to(code).emit('correctAnswerFound', { 
+        game,
+        winnerName: winner.name, // Utiliser le nom du gagnant trouvé
+        trackTitle: game.tracks[game.currentTrackIndex].title 
+      });
+    
+      setTimeout(() => {
+        game.currentTrackIndex++;
+        game.canGuess = true;
+    
+        if (isLastTrack) {
+          io.to(code).emit('gameEnded', { game });
+        } else {
+          io.to(code).emit('nextTrack', { 
+            game,
+            currentTrackIndex: game.currentTrackIndex
+          });
+        }
+      }, 2000);
+    });
 
     socket.on('timerEnded', ({ code, currentTrackIndex, timeUp }) => {
       const game = games[code];
