@@ -119,7 +119,6 @@ module.exports = (io) => {
           winnerName: player.name,
           trackTitle: game.tracks[game.currentTrackIndex].title 
         });
-      });
 
         setTimeout(() => {
           game.currentTrackIndex++;
