@@ -114,6 +114,13 @@ module.exports = (io) => {
           return player;
         });
 
+        io.to(code).emit('correctAnswerFound', { 
+          game,
+          winnerName: player.name,
+          trackTitle: game.tracks[game.currentTrackIndex].title 
+        });
+      });
+
         setTimeout(() => {
           game.currentTrackIndex++;
           game.canGuess = true;
